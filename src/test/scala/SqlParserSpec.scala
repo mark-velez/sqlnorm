@@ -1,12 +1,12 @@
-import org.scalatest.{Inside, Matchers, FlatSpec}
-import sqlnorm.MysqlDialect
+import org.scalatest.{FlatSpec, Inside, Matchers}
 import sqlnorm.Ast._
+import sqlnorm.{Dialect, MysqlDialect, SqlParser}
 
-class SqlParserSpec extends FlatSpec with Matchers with Inside {
+class MysqlParserSpec extends SqlParserSpec[MysqlDialect] {
   val q0 = "select person_id, birth_year from person where person.birth_year > 2000 limit 100"
 
   "MySQL parser" should "parse select statement" in {
-    MysqlDialect.parser.parseAllWith(MysqlDialect.parser.stmt, q0) map {
+    parse(q0) map {
       case Select(projection, tableRefs, where, None, None, Some(limit)) =>
         inside(projection) {
           case List(Named(col1, None, _), Named(col2, None, _)) =>
@@ -34,4 +34,8 @@ class SqlParserSpec extends FlatSpec with Matchers with Inside {
     }
   }
 
+}
+
+abstract class SqlParserSpec[T <: Dialect] extends FlatSpec with Matchers with Inside {
+  def parse(query: String)(implicit parser: SqlParser[T]) = parser.parseAllWith(parser.stmt, query)
 }
